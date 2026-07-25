@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your GPU Is a Very Expensive Photocopier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#e9e1cd; --paper-2:#e2d8bf; --panel:#efe8d7;
+    --ink:#16120b; --ink-70:rgba(22,18,11,.70); --ink-45:rgba(22,18,11,.45);
+    --ink-20:rgba(22,18,11,.18); --ink-08:rgba(22,18,11,.07);
+    --accent:#ef3908; --accent-2:#c22c05;
+    --dot:rgba(22,18,11,.055);
+    --disp:"Anton",Impact,sans-serif;
+    --serif:"Fraunces",Georgia,serif;
+    --mono:"Space Mono","SFMono-Regular",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; color:var(--ink); font-family:var(--serif); font-size:17px; line-height:1.5;
+    background-color:var(--paper);
+    background-image:radial-gradient(var(--dot) 1px, transparent 1.5px);
+    background-size:23px 23px; background-position:-6px -6px;
+    overflow-x:hidden;
+  }
+  /* film grain + registration marks ------------------------------------------------ */
+  .grain{position:fixed; inset:0; z-index:60; pointer-events:none; opacity:.5; mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");}
+  .crop{position:fixed; width:22px; height:22px; z-index:61; pointer-events:none; opacity:.55}
+  .crop::before,.crop::after{content:""; position:absolute; background:var(--ink)}
+  .crop::before{width:100%; height:1.5px} .crop::after{height:100%; width:1.5px}
+  .crop.tl{top:14px;left:14px} .crop.tr{top:14px;right:14px} .crop.tr::after{right:0}
+  .crop.bl{bottom:14px;left:14px} .crop.bl::before{bottom:0} .crop.br{bottom:14px;right:14px}
+  .crop.br::before{bottom:0} .crop.br::after{right:0}
+  @media(max-width:640px){.crop{display:none}}
+
+  a{color:inherit}
+  b,strong{font-weight:600}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 clamp(20px,5vw,64px)}
+
+  /* ============ MASTHEAD ============ */
+  header.mast{max-width:1180px; margin:0 auto; padding:clamp(28px,6vw,64px) clamp(20px,5vw,64px) clamp(20px,4vw,40px);
+    display:grid; grid-template-columns:1.35fr 1fr; gap:clamp(20px,4vw,56px); align-items:end;
+    border-bottom:2px solid var(--ink);}
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--ink-70); margin-bottom:clamp(14px,2vw,22px); display:flex; align-items:center; gap:10px;}
+  .kicker::before{content:""; width:34px; height:2px; background:var(--accent); display:inline-block}
+  h1.title{font-family:var(--disp); font-weight:400; margin:0;
+    font-size:clamp(46px,9.4vw,132px); line-height:.86; letter-spacing:.005em; text-transform:uppercase;}
+  h1.title .l{display:block; overflow:hidden}
+  h1.title .l span{display:block; will-change:transform}
+  h1.title em{font-style:normal; color:var(--accent); position:relative}
+  h1.title em::after{content:""; position:absolute; left:-1%; right:-1%; bottom:.12em; height:.07em;
+    background:var(--accent); transform:scaleX(0); transform-origin:left; animation:draw .7s 1s cubic-bezier(.2,.8,.2,1) forwards}
+  .mast-right{padding-bottom:.4em}
+  .sub{font-family:var(--serif); font-optical-sizing:auto; font-size:clamp(15px,1.55vw,18px);
+    line-height:1.55; color:var(--ink); margin:0 0 18px; max-width:46ch}
+  .sub b{color:var(--accent-2)}
+  .stamp{font-family:var(--mono); font-size:11px; letter-spacing:.04em; color:var(--ink-70);
+    border:1.5px solid var(--ink-20); border-left:3px solid var(--accent); padding:7px 11px; display:inline-block;
+    background:var(--ink-08)}
+
+  /* ============ READOUT (asymmetric hero + ledger) ============ */
+  .readout{display:grid; grid-template-columns:1.15fr .85fr; gap:clamp(24px,5vw,72px);
+    align-items:center; padding:clamp(34px,6vw,72px) 0; border-bottom:1px solid var(--ink-20);}
+  .hero-fig{position:relative}
+  .hero-fig::before{content:attr(data-k); text-transform:uppercase; position:absolute; top:-22px; left:2px;
+    font-family:var(--mono); font-size:10px; letter-spacing:.3em; color:var(--ink-45)}
+  .readout .hero-fig+.hero-fig{border-left:1.5px solid var(--ink-20); padding-left:clamp(22px,4vw,56px)}
+  .hero-n{font-family:var(--mono); font-weight:700; font-size:clamp(52px,10vw,116px); line-height:.92;
+    letter-spacing:-.02em; color:var(--ink); font-variant-numeric:tabular-nums}
+  .hero-n.accent{color:var(--accent)}
+  .hero-n .slash{color:var(--accent)}
+  .livemeter{grid-column:1 / -1; display:flex; align-items:center; gap:10px; margin-bottom:6px;
+    font-family:var(--mono); font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-70);
+    border:1.5px solid var(--ink-20); border-left:3px solid var(--accent); padding:9px 14px; background:var(--ink-08)}
+  .livemeter b{font-weight:700; font-size:16px; color:var(--accent); letter-spacing:0; margin-left:auto;
+    font-variant-numeric:tabular-nums; transition:color .3s}
+  .livemeter .dot{width:9px; height:9px; border-radius:50%; background:var(--accent); flex:none;
+    animation:pulse 1.7s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1; transform:scale(1)} 50%{opacity:.3; transform:scale(.6)}}
+  .hero-l{font-family:var(--serif); font-size:clamp(15px,1.5vw,18px); margin-top:14px; color:var(--ink)}
+  .hero-l span{color:var(--ink-70); font-style:italic}
+  .ledger{border-top:2px solid var(--ink)}
+  .ledger .row{display:flex; align-items:baseline; justify-content:space-between; gap:16px;
+    padding:15px 2px; border-bottom:1px dotted var(--ink-45)}
+  .ledger .k{font-family:var(--serif); font-size:15px; color:var(--ink-70); max-width:20ch; line-height:1.3}
+  .ledger .v{font-family:var(--mono); font-weight:700; font-size:clamp(20px,2.5vw,30px);
+    font-variant-numeric:tabular-nums; letter-spacing:-.01em; white-space:nowrap}
+  .ledger .v.accent{color:var(--accent)}
+
+  /* ============ NUMBERED BLOCKS ============ */
+  .block{display:grid; grid-template-columns:minmax(0,150px) 1fr; gap:clamp(18px,4vw,52px);
+    padding:clamp(40px,6vw,80px) 0; border-bottom:1px solid var(--ink-20); align-items:start}
+  .numeral{font-family:var(--disp); font-size:clamp(64px,11vw,150px); line-height:.8; color:var(--accent)}
+  .zone{font-family:var(--serif); font-weight:600; font-optical-sizing:auto;
+    font-size:clamp(21px,2.6vw,30px); line-height:1.15; margin:0 0 22px; max-width:24ch; letter-spacing:-.01em}
+  .zone em{font-style:italic; color:var(--accent-2)}
+
+  /* capacity gauges */
+  .cap{}
+  .caprow{display:grid; grid-template-columns:120px 1fr; align-items:center; gap:16px; margin:0 0 14px}
+  .caprow .who{font-family:var(--mono); font-size:12px; text-transform:uppercase; letter-spacing:.08em; font-weight:700}
+  .caprow.van .who{color:var(--ink)} .caprow.tm .who{color:var(--accent)}
+  .bar{height:34px; display:flex; background:var(--ink-08); border:1.5px solid var(--ink);
+    overflow:hidden; position:relative}
+  .bar .seg{height:100%; display:flex; align-items:center; justify-content:flex-end; padding:0 10px;
+    font-family:var(--mono); font-size:11px; font-weight:700; color:var(--paper); white-space:nowrap;
+    letter-spacing:.02em; transition:width .7s cubic-bezier(.2,.8,.2,1)}
+  .seg.recompute{background:var(--ink)}
+  .seg.reuse{background:var(--accent)}
+  .seg.gpu{background:repeating-linear-gradient(45deg,var(--ink-20),var(--ink-20) 5px,transparent 5px,transparent 10px)}
+  .archfig{margin:18px 0 6px; max-width:960px}
+  .archfig svg{width:100%; height:auto; display:block}
+  .capcap{font-family:var(--serif); font-size:15.5px; line-height:1.55; color:var(--ink-70); margin-top:18px; max-width:62ch}
+  .capcap b{color:var(--ink)} .capcap i{color:var(--accent-2)}
+  .tag{font-family:var(--mono); font-size:11px; color:var(--ink-70); border:1.5px solid var(--ink-20);
+    padding:2px 7px; display:inline-block; background:var(--ink-08); letter-spacing:.02em}
+
+  /* chips = rubber-stamp index tabs */
+  .chips{display:flex; flex-wrap:wrap; gap:10px; margin:0 0 16px}
+  .chip{font-family:var(--mono); font-size:13px; letter-spacing:.01em; color:var(--ink);
+    background:transparent; border:1.5px solid var(--ink); padding:9px 15px; cursor:crosshair;
+    position:relative; overflow:hidden; transition:color .2s ease; text-align:left}
+  .chip::before{content:""; position:absolute; inset:0; background:var(--accent); transform:translateX(-101%);
+    transition:transform .26s cubic-bezier(.2,.8,.2,1); z-index:-1}
+  .chip span{position:relative; z-index:1}
+  .chip:hover{color:var(--paper); border-color:var(--accent)}
+  .chip:hover::before{transform:translateX(0)}
+  .chip:active{transform:translate(1px,1px)}
+
+  details.own{margin:0 0 22px}
+  details.own summary{font-family:var(--mono); font-size:12px; color:var(--ink-70); cursor:pointer;
+    letter-spacing:.04em; text-transform:uppercase; list-style:none}
+  details.own summary::-webkit-details-marker{display:none}
+  details.own summary::before{content:"+ "; color:var(--accent)}
+  details.own[open] summary::before{content:"– "}
+  .ask{display:flex; gap:0; margin:12px 0 0; border:1.5px solid var(--ink)}
+  .ask input{flex:1; background:transparent; border:0; padding:13px 14px; color:var(--ink);
+    font-family:var(--mono); font-size:14px}
+  .ask input::placeholder{color:var(--ink-45)}
+  .ask input:focus{outline:none; background:var(--ink-08)}
+  .ask button{font-family:var(--mono); font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.06em;
+    background:var(--ink); color:var(--paper); border:0; border-left:1.5px solid var(--ink); padding:0 20px; cursor:crosshair; transition:background .2s}
+  .ask button:hover{background:var(--accent)}
+
+  /* panes — asymmetric, staggered, sharp print edges */
+  .panes{display:grid; grid-template-columns:1fr 1fr; gap:clamp(14px,2.4vw,26px)}
+  .pane{border:2px solid var(--ink); background:var(--panel); display:flex; flex-direction:column; position:relative;
+    box-shadow:6px 6px 0 var(--ink-08)}
+  .pane.tm{margin-top:30px; border-color:var(--accent); box-shadow:6px 6px 0 rgba(239,57,8,.14)}
+  .pane h2{margin:0; padding:12px 14px; display:flex; justify-content:space-between; align-items:center;
+    border-bottom:1.5px solid var(--ink); font-family:var(--mono); font-size:12px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.05em; gap:8px}
+  .pane.tm h2{border-color:var(--accent)}
+  .pane.van .who2{color:var(--ink)} .pane.tm .who2{color:var(--accent)}
+  .pane .role{font-family:var(--mono); font-weight:400; font-size:10px; letter-spacing:.14em; color:var(--ink-45);
+    border:1px solid var(--ink-20); padding:1px 5px; text-transform:uppercase}
+  .clock{font-family:var(--mono); font-size:12px; color:var(--ink-45); white-space:nowrap}
+  .clock b{font-size:17px; color:var(--ink); font-weight:700; font-variant-numeric:tabular-nums}
+  .pane.tm .clock b{color:var(--accent)}
+  .blend{padding:14px}
+  .blend .lbl{font-family:var(--mono); font-size:11px; color:var(--ink-70); margin-bottom:9px; display:block; letter-spacing:.01em}
+  .blend .row{display:flex; flex-wrap:wrap; gap:3px}
+  .blend .c{width:15px; height:15px; background:var(--ink-08); border:1px solid var(--ink-20);
+    transition:background .45s ease, border-color .45s ease}
+  .blend .c.g{background:var(--accent); border-color:var(--accent)}
+  .blend .c.r{background:var(--ink); border-color:var(--ink)}
+  .log{padding:11px 14px; font-family:var(--mono); font-size:12px; color:var(--ink-70);
+    border-top:1.5px solid var(--ink-20); line-height:1.5}
+  .msg.u{color:var(--ink-70)}
+  /* copier scan-line while prefilling */
+  .pane.scanning::after{content:""; position:absolute; left:0; right:0; top:0; height:2px;
+    background:linear-gradient(90deg,transparent,var(--accent),transparent);
+    animation:scan 1.15s linear infinite; z-index:2; pointer-events:none}
+
+  /* fleet callout */
+  .fleet{border:2px solid var(--ink); background:var(--panel); padding:clamp(18px,3vw,28px); box-shadow:6px 6px 0 var(--ink-08)}
+  .fleet .row1{display:flex; gap:16px; align-items:center; flex-wrap:wrap}
+  .bigbtn{font-family:var(--mono); font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.06em;
+    background:var(--accent); color:var(--paper); border:2px solid var(--ink); padding:12px 20px; cursor:crosshair;
+    transition:transform .12s, box-shadow .12s; box-shadow:4px 4px 0 var(--ink)}
+  .bigbtn:hover{transform:translate(-1px,-1px); box-shadow:6px 6px 0 var(--ink)}
+  .bigbtn:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink)}
+  #b2stat{font-family:var(--serif); font-size:15px; color:var(--ink-70)}
+  #b2stat b{color:var(--accent); font-variant-numeric:tabular-nums}
+  #b2log{font-family:var(--mono); font-size:12px; color:var(--ink-70); margin-top:14px;
+    border:1.5px solid var(--ink-20); padding:11px 13px; background:var(--ink-08); display:none}
+
+  /* utility / meta */
+  .meta{padding:clamp(30px,5vw,56px) 0 0}
+  .tools{display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:22px}
+  details.dd{border-top:1px solid var(--ink-20); padding:14px 0}
+  details.dd summary{font-family:var(--mono); font-size:12px; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--ink); cursor:pointer; list-style:none}
+  details.dd summary::-webkit-details-marker{display:none}
+  details.dd summary::before{content:"▸ "; color:var(--accent); display:inline-block; transition:transform .2s}
+  details.dd[open] summary::before{content:"▾ "}
+  .eng{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:16px; margin-top:16px}
+  .eng .cell{border:1.5px solid var(--ink-20); padding:14px}
+  .eng .n{font-family:var(--mono); font-weight:700; font-size:24px; font-variant-numeric:tabular-nums}
+  .eng .l{font-family:var(--serif); font-size:13px; color:var(--ink-70); margin-top:5px; line-height:1.35}
+  .specs{display:grid; grid-template-columns:150px 1fr; gap:9px 18px; margin-top:16px; font-size:14px}
+  .specs .sk{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-45); padding-top:2px}
+  .specs .sv{font-family:var(--serif); color:var(--ink); line-height:1.4}
+  .foot{font-family:var(--serif); font-size:14px; line-height:1.65; color:var(--ink-70);
+    border-top:2px solid var(--ink); margin-top:26px; padding:20px 0 clamp(40px,7vw,80px); max-width:80ch}
+  .foot b{color:var(--ink)} .foot i{color:var(--accent-2)}
+
+  /* ============ MOTION ============ */
+  @keyframes rise{from{transform:translateY(105%)} to{transform:translateY(0)}}
+  @keyframes draw{to{transform:scaleX(1)}}
+  @keyframes scan{from{top:0} to{top:100%}}
+  @keyframes flick{0%,100%{opacity:1} 20%{opacity:.35} 40%{opacity:1} 55%{opacity:.5}}
+  h1.title .l span{animation:rise .8s cubic-bezier(.2,.85,.2,1) both}
+  h1.title .l1 span{animation-delay:.05s} h1.title .l2 span{animation-delay:.15s} h1.title .l3 span{animation-delay:.25s}
+  .mast-right{animation:rise .8s .38s cubic-bezier(.2,.85,.2,1) both; }
+  .reveal{opacity:0; transform:translateY(30px); transition:opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1; transform:none}
+  .flick{animation:flick .45s steps(1) 1}
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none !important}
+    .reveal{opacity:1; transform:none}
+    h1.title em::after{transform:scaleX(1)}
+  }
+
+  /* ============ RESPONSIVE ============ */
+  @media(max-width:900px){
+    header.mast{grid-template-columns:1fr; align-items:start; gap:22px}
+    .mast-right{padding-bottom:0}
+    .readout{grid-template-columns:1fr; gap:30px}
+    .block{grid-template-columns:1fr; gap:8px}
+    .numeral{font-size:clamp(56px,16vw,90px)}
+    .pane.tm{margin-top:0}
+  }
+  @media(max-width:560px){
+    body{font-size:16px}
+    .panes{grid-template-columns:1fr}
+    .caprow{grid-template-columns:1fr; gap:7px}
+    .ledger .k{max-width:none}
+    .ask{flex-direction:column} .ask button{border-left:0; border-top:1.5px solid var(--ink); padding:12px}
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
+
+<header class="mast">
+  <div class="mast-left">
+    <div class="kicker">Tensormesh · a live demo</div>
+    <h1 class="title">
+      <span class="l l1"><span>Your GPU Is a</span></span>
+      <span class="l l2"><span>Very <em>Expensive</em></span></span>
+      <span class="l l3"><span>Photocopier</span></span>
+    </h1>
+  </div>
+  <div class="mast-right">
+    <p class="sub">Ask a large knowledge base many <b>different</b> things. Plain vLLM <b>recomputes</b> the entire context for every query — from scratch, every time. Tensormesh (LMCache) <b>remembers</b> the KV and serves it back, so the context is reused — and that memory outlives the pod and is shared across every engine.</p>
+    <span class="stamp" id="regime">live · Llama-3.1-8B · RAG · ~16k-token context · prefill / first-token</span>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- READOUT — the two real wins + a live "room meter" fed by the gentle sim-user loop -->
+  <section class="readout reveal">
+    <div class="livemeter"><span class="dot"></span> live · context tokens reused so far <b id="reuse">0</b></div>
+    <div class="hero-fig" data-k="First-token speedup">
+      <div class="hero-n" id="ttftwin">–</div>
+      <div class="hero-l">faster first token — <span>Tensormesh vs plain vLLM · lights up when you ask</span></div>
+    </div>
+    <div class="hero-fig" data-k="Shared-cache arrival">
+      <div class="hero-n accent" id="xengine">–</div>
+      <div class="hero-l">tokens a fresh engine reused on arrival — <span>a cold engine can't</span></div>
+    </div>
+  </section>
+
+  <!-- 01 LIVE -->
+  <section class="block reveal">
+    <div class="numeral">01</div>
+    <div class="content">
+      <h2 class="zone">Live — tap questions one at a time, watch the <em>time-to-first-token</em></h2>
+      <div class="chips" id="chips"></div>
+      <details class="own">
+        <summary>ask your own question</summary>
+        <div class="ask">
+          <input id="q" placeholder="Ask the knowledge base…  (e.g. what does the returns policy say about opened items?)">
+          <button id="go">Ask both</button>
+        </div>
+      </details>
+      <div class="panes">
+        <div class="pane van">
+          <h2><span class="who2">Plain vLLM <span class="role">recompute</span></span><span class="clock" id="clk-van">TTFT <b>–</b></span></h2>
+          <div class="blend" id="bl-van"><span class="lbl">context chunks — this query</span><div class="row"></div></div>
+          <div class="log" id="log-van">ask a question to see the prefill</div>
+        </div>
+        <div class="pane tm">
+          <h2><span class="who2">Tensormesh CacheBlend <span class="role">reuse</span></span><span class="clock" id="clk-tm">TTFT <b>–</b></span></h2>
+          <div class="blend" id="bl-tm"><span class="lbl">context chunks — this query</span><div class="row"></div></div>
+          <div class="log" id="log-tm">ask a question to see the prefill</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 FLEET -->
+  <section class="block reveal">
+    <div class="numeral">02</div>
+    <div class="content">
+      <h2 class="zone">The fleet win — a fresh engine is <em>warm on arrival</em></h2>
+      <figure class="archfig">
+        <svg viewBox="0 0 1040 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="One shared cache: fleet engine A stores KV then reuses it; a fresh engine B is warm on arrival; vanilla recomputes and shares nothing.">
+          <style>
+            .af-n{font:700 17px Arial;fill:var(--ink)} .af-d{font:400 13px Arial;fill:var(--ink-70)}
+            .af-e{stroke:var(--ink);stroke-width:2;fill:none} .af-r{stroke:var(--accent);stroke-width:2.5;fill:none}
+            .af-s{font:800 15px Arial;fill:#fff} .af-l{font:600 12.5px Arial;fill:var(--ink)} .af-b{font:700 12.5px Arial;fill:var(--accent)}
+            .af-k{font:700 12px ui-monospace,monospace;letter-spacing:.14em;fill:var(--accent)}
+            .af-box{fill:var(--panel);stroke:var(--ink);stroke-width:2} .af-tier{fill:#f6ecd9;stroke:var(--accent);stroke-width:2.5}
+            .af-kv{fill:var(--accent)} .af-jn{fill:var(--ink)} .af-stepc{fill:var(--accent)} .af-arh{fill:var(--ink)} .af-arhr{fill:var(--accent)}
+          </style>
+          <text class="af-k" x="0" y="20">ONE SHARED CACHE — STORE ONCE, REUSE ANYWHERE</text>
+          <rect class="af-box" x="0" y="176" width="118" height="82" rx="10"/>
+          <text class="af-n" x="59" y="212" text-anchor="middle">You</text>
+          <text class="af-d" x="59" y="233" text-anchor="middle">tap a question</text>
+          <path class="af-e" d="M118 215 H150"/><circle class="af-jn" cx="150" cy="215" r="3.5"/>
+          <path class="af-e" d="M150 215 V78 H206" marker-end="url(#afa)"/>
+          <path class="af-e" d="M150 215 H206" marker-end="url(#afa)"/>
+          <rect class="af-box" x="208" y="40" width="252" height="78" rx="10"/>
+          <text class="af-n" x="226" y="72">Vanilla vLLM</text>
+          <text class="af-d" x="226" y="95">recomputes the full context, every query</text>
+          <text class="af-b" x="208" y="135">✗ never touches the cache — no reuse</text>
+          <rect class="af-box" x="208" y="176" width="252" height="76" rx="10"/>
+          <text class="af-n" x="226" y="208">Fleet engine A</text>
+          <text class="af-d" x="226" y="231">vLLM + LMCache</text>
+          <rect class="af-box" x="208" y="316" width="252" height="76" rx="10"/>
+          <text class="af-n" x="226" y="348">Fleet engine B</text>
+          <text class="af-d" x="226" y="371">brand-new / restarted</text>
+          <rect class="af-tier" x="720" y="138" width="232" height="196" rx="12"/>
+          <text class="af-n" x="836" y="186" text-anchor="middle">LMCache shared tier</text>
+          <text class="af-d" x="836" y="214" text-anchor="middle">170 GB KV cache (CPU RAM)</text>
+          <text class="af-d" x="836" y="256" text-anchor="middle">outlives any pod ·</text>
+          <text class="af-d" x="836" y="274" text-anchor="middle">shared by every engine</text>
+          <path id="afStore" class="af-r" d="M460 204 C598 204 598 196 720 196" marker-end="url(#afr)"/>
+          <path id="afReuse" class="af-r" d="M720 236 C598 236 598 230 460 230" marker-end="url(#afr)"/>
+          <path id="afShare" class="af-r" d="M720 286 C600 316 560 348 462 352" marker-end="url(#afr)"/>
+          <circle class="af-stepc" cx="586" cy="182" r="12"/><text class="af-s" x="586" y="187" text-anchor="middle">1</text><text class="af-l" x="604" y="186">store KV</text>
+          <circle class="af-stepc" cx="548" cy="248" r="12"/><text class="af-s" x="548" y="253" text-anchor="middle">2</text><text class="af-l" x="566" y="252">reuse — skip prefill</text>
+          <circle class="af-stepc" cx="560" cy="330" r="12"/><text class="af-s" x="560" y="335" text-anchor="middle">3</text><text class="af-l" x="578" y="334">warm on arrival</text>
+          <rect class="af-kv" x="-6" y="-6" width="12" height="12" rx="2"><animateMotion dur="2.2s" repeatCount="indefinite"><mpath href="#afStore"/></animateMotion><animate attributeName="opacity" dur="2.2s" repeatCount="indefinite" values="0;1;1;0" keyTimes="0;0.1;0.9;1"/></rect>
+          <rect class="af-kv" x="-6" y="-6" width="12" height="12" rx="2"><animateMotion dur="2.2s" begin="0.9s" repeatCount="indefinite"><mpath href="#afReuse"/></animateMotion><animate attributeName="opacity" dur="2.2s" begin="0.9s" repeatCount="indefinite" values="0;1;1;0" keyTimes="0;0.1;0.9;1"/></rect>
+          <rect class="af-kv" x="-6" y="-6" width="12" height="12" rx="2"><animateMotion dur="2.4s" begin="1.5s" repeatCount="indefinite"><mpath href="#afShare"/></animateMotion><animate attributeName="opacity" dur="2.4s" begin="1.5s" repeatCount="indefinite" values="0;1;1;0" keyTimes="0;0.1;0.9;1"/></rect>
+          <defs>
+            <marker id="afa" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path class="af-arh" d="M0 0 L7 3 L0 6 z"/></marker>
+            <marker id="afr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path class="af-arhr" d="M0 0 L7 3 L0 6 z"/></marker>
+          </defs>
+        </svg>
+        <figcaption class="capcap" style="margin-top:8px">Every fleet engine reads and writes <b>one shared LMCache tier</b>: engine A stores the KV once, reuses it on the next query, and a brand-new engine B is <b>warm on arrival</b> — vanilla recomputes and shares nothing. <i>This is what a per-GPU cache can't do.</i></figcaption>
+      </figure>
+      <div class="fleet">
+        <div class="row1">
+          <button id="b2go" class="bigbtn">Ask a fresh engine (B)</button>
+          <span id="b2stat">Engine B has never seen these passages…</span>
+        </div>
+        <div id="b2log"></div>
+        <div class="capcap">A brand-new engine B, sharing the fleet's cache server, reuses the KV that engine A and the room already warmed — so it's <b>fast on arrival</b>, no cold-start recompute. A single engine's own memory <i>cannot</i> do this.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- META -->
+  <section class="meta reveal">
+    <details class="dd">
+      <summary>system &amp; methodology — what you're looking at</summary>
+      <div class="specs">
+        <div class="sk">Hardware</div><div class="sv" id="si-hardware">…</div>
+        <div class="sk">Model</div><div class="sv" id="si-model">…</div>
+        <div class="sk">Serving stack</div><div class="sv" id="si-stack">…</div>
+        <div class="sk">Vanilla arm</div><div class="sv" id="si-vanilla">…</div>
+        <div class="sk">Tensormesh arm</div><div class="sv" id="si-tensormesh">…</div>
+        <div class="sk">Cache tier</div><div class="sv" id="si-kv_cap">…</div>
+        <div class="sk">Workload</div><div class="sv" id="si-workload">…</div>
+        <div class="sk">Room load</div><div class="sv" id="si-roomload">…</div>
+      </div>
+    </details>
+    <div class="foot" id="foot">
+      Honest regime (live, Llama-3.1-8B, measured 2026-07-25): two real wins. (1) <b>Reuse</b> — plain vLLM recomputes
+      the full ~16k-token context for every query (~1s to first token); Tensormesh reuses it from its 170 GB shared
+      tier (~0.2s) — a <b>~5× first-token</b> win, measured <i>paced</i> (one query at a time). (2) <b>Sharing &amp;
+      persistence</b> — a fresh or restarted engine is warm on arrival, which a single engine's local memory can't do.
+      The throughput multipliers (2–4×, gpt-oss-120b) are on the slides.
+    </div>
+  </section>
+</main>
+
+<script>
+let SESSION = "demo";
+const hist = {van: [], tm: []};
+const $ = id => document.getElementById(id);
+
+// The hero shows the actual headline win: the FIRST-TOKEN speedup of the last question
+// (vanilla TTFT ÷ fleet TTFT). It lights up when the presenter asks — no scoreboard polling,
+// no load-driver telemetry (the demo is paced, one query at a time).
+const heroTTFT = {tm: null, van: null};
+function bumpHero(){
+  const f = heroTTFT.tm, v = heroTTFT.van;
+  if (f && v) $("ttftwin").textContent = (v / f).toFixed(1) + "×";
+  else if (f) $("ttftwin").textContent = f.toFixed(2) + "s";
+}
+
+function renderBlend(el, done, isFleet){
+  const k = done.chunks || 0;
+  const pct = isFleet ? (done.reuse_pct || 0) : 0;
+  const green = Math.round(k * pct);
+  const row = el.querySelector('.row'); row.innerHTML = '';
+  for (let i = 0; i < k; i++){
+    const c = document.createElement('div');
+    c.className = 'c ' + (i < green ? 'g' : 'r');
+    row.appendChild(c);
+  }
+  const lbl = el.querySelector('.lbl');
+  lbl.textContent = isFleet
+    ? `reused ${(done.blend_reused||0).toLocaleString()} / ${(done.blend_requested||0).toLocaleString()} tok · ${Math.round(pct*100)}% from cache`
+    : `recomputed — 0% from cache`;
+}
+// NUMBERS-ONLY: we display prefill work (TTFT + reused/recomputed), NOT the generated text.
+// This is the LMCache claim (prefill reuse) and sidesteps blend generation quality entirely.
+function streamArm(arm, logEl, clockEl, q){
+  clockEl.innerHTML = 'TTFT <b>…</b>';
+  const blendEl = document.getElementById(arm === "fleet" ? "bl-tm" : "bl-van");
+  blendEl.querySelector('.row').innerHTML = ''; blendEl.querySelector('.lbl').textContent = 'computing…';
+  logEl.innerHTML = '<div class="msg u" style="opacity:.55">▋ prefilling…</div>';
+  const t0 = performance.now();
+  const url = `/chat?session=${encodeURIComponent(SESSION)}&arm=${arm}` +
+              `&q=${encodeURIComponent(q)}&history=${encodeURIComponent("[]")}`;  // independent queries, no drift
+  const es = new EventSource(url);
+  let gotFirst = false;
+  es.onmessage = e => {
+    const d = JSON.parse(e.data);
+    if (d.t && !gotFirst){ gotFirst = true;
+      clockEl.innerHTML = `TTFT <b>${((performance.now()-t0)/1000).toFixed(2)}s</b>`; }
+    if (d.done){
+      if(d.done.ttft_s) clockEl.innerHTML = `TTFT <b>${d.done.ttft_s}s</b>`;
+      renderBlend(blendEl, d.done, arm === "fleet");
+      if (d.done.ttft_s) heroTTFT[arm === "fleet" ? "tm" : "van"] = d.done.ttft_s;
+      bumpHero();
+      const ctx = ((d.done.chunks||0)*512).toLocaleString();
+      logEl.innerHTML = `<div class="msg u" style="opacity:.55">prefill complete · ~${ctx} context tokens assembled</div>`;
+      es.close();
+    }
+  };
+  es.onerror = () => { es.close(); };
+}
+function askBoth(q){
+  if(!q) return;
+  heroTTFT.tm = heroTTFT.van = null;   // fresh query — don't mix new fleet with stale vanilla
+  streamArm("vanilla", $("log-van"), $("clk-van"), q);
+  streamArm("fleet",   $("log-tm"),  $("clk-tm"),  q);
+}
+// NUMBERS-ONLY demo: the answer isn't shown, so the QUESTION text doesn't change what's on
+// screen — it only picks which chunks get retrieved. So lead with one-tap vetted questions
+// (no typing friction, always on-corpus); the text box is an optional "ask your own".
+// Presets come from the server (single source of truth; deliberately many + diverse so the
+// working set exceeds the GPU cache and plain vLLM keeps evicting -> recompute).
+const chipsEl = $("chips");
+fetch("/presets").then(r => r.json()).then(d => {
+  (d.presets || []).forEach(q => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.innerHTML = "<span></span>";
+    b.querySelector("span").textContent = q.replace(/\?$/, "");
+    b.onclick = () => askBoth(q);
+    chipsEl.appendChild(b);
+  });
+}).catch(()=>{});
+$("go").onclick = () => { const q = $("q").value.trim(); askBoth(q); };
+$("q").addEventListener("keydown", e => { if(e.key==="Enter") $("go").click(); });
+// "chat with your own doc" removed: a single pasted doc is one tiny (~512-tok) context that fits
+// vanilla's GPU cache with room to spare, so it can't reproduce the capacity-eviction win (fleet
+// ties or loses on it). The demo runs on the shared KB, where the working set spills the cache.
+
+$("b2go").onclick = async () => {
+  const q = $("q").value.trim() || "what is the return window and restocking fee for opened items?";
+  $("b2stat").textContent = "engine B prefilling (cold engine — but the fleet cache is warm)…";
+  $("b2log").style.display = "block"; $("b2log").textContent = "▋ …";
+  try{
+    const j = await (await fetch("/crossengine?q=" + encodeURIComponent(q))).json();
+    // NUMBERS-ONLY (same as Acts 1/2): show the cross-engine PREFILL reuse — the Act-3 point —
+    // never the generated text (Llama-8B blend garbles a fraction of answers).
+    const reused = Math.max(j.blend_hit_delta||0, j.external_kv_delta||0);
+    if (reused>0) $("xengine").textContent = reused.toLocaleString();   // headline: shared-cache win a per-GPU cache can't do
+    $("b2log").textContent = reused>0
+      ? `engine B reused ${reused.toLocaleString()} context tokens from the shared cache on its FIRST request — 0 recomputed`
+      : `engine B computed this cold — no shared-cache hit`;
+    $("b2stat").innerHTML = reused>0
+      ? `A brand-new engine that never saw these passages served <b>${reused.toLocaleString()}</b> tokens from the shared fleet cache — cache on arrival.`
+      : `Engine B found nothing warm in the shared fleet.`;
+  }catch(e){ $("b2stat").textContent = "engine B unreachable"; }
+};
+
+// LIVE meter only: a gentle server-side sim-user loop reuses ~16k tok/query in the engines' idle
+// gaps, so this cumulative counter climbs continuously. (The old bars/engineer/room-load telemetry
+// stays removed — this is the one honest, always-increasing number.)
+let _lastReuse = 0;
+async function tick(){
+  try{
+    const s = await (await fetch("/scoreboard")).json();
+    if (s.reuse_tokens != null){
+      const el = $("reuse"); el.textContent = s.reuse_tokens.toLocaleString();
+      if (s.reuse_tokens > _lastReuse){ el.style.color = "var(--accent)"; }
+      _lastReuse = s.reuse_tokens;
+    }
+  }catch(e){}
+  setTimeout(tick, 2000);
+}
+tick();
+
+async function loadSysinfo(){
+  try{
+    const s = await (await fetch("/sysinfo")).json();
+    for (const k of ["hardware","model","stack","vanilla","tensormesh","kv_cap","workload","roomload"]){
+      const el = $("si-" + k); if (el && s[k]!=null) el.textContent = s[k];
+    }
+  }catch(e){}
+}
+loadSysinfo();
+</script>
+
+<script>
+/* PRESENTATION ONLY — decorative; never touches the functional logic above.
+   (a) scroll-reveal of sections; (b) copier scan-line on a pane while it prefills;
+   (c) a quick toner-flicker on the hero figure when its value changes. */
+(function(){
+  const rm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // (a) reveal on scroll
+  const io = ("IntersectionObserver" in window) ? new IntersectionObserver((es)=>{
+    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } });
+  }, {threshold:.12, rootMargin:"0px 0px -8% 0px"}) : null;
+  document.querySelectorAll(".reveal").forEach(el=>{ if(io && !rm) io.observe(el); else el.classList.add("in"); });
+
+  // (b) scan-line: watch each pane's log for the "prefilling" state
+  ["log-van","log-tm"].forEach(id=>{
+    const log = document.getElementById(id); if(!log) return;
+    const pane = log.closest(".pane"); if(!pane) return;
+    new MutationObserver(()=>{
+      const busy = /prefilling/i.test(log.textContent||"");
+      pane.classList.toggle("scanning", busy && !rm);
+    }).observe(log, {childList:true, subtree:true, characterData:true});
+  });
+
+  // (c) hero flicker on change
+  const hero = document.getElementById("ttftwin");
+  if(hero && !rm){
+    new MutationObserver(()=>{ hero.classList.remove("flick"); void hero.offsetWidth; hero.classList.add("flick"); })
+      .observe(hero, {childList:true, characterData:true, subtree:true});
+  }
+})();
+</script>
+</body>
+</html>

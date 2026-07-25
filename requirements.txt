@@ -1,0 +1,5 @@
+# The harness itself needs only the Python standard library.
+# transformers is OPTIONAL — it gives exact token counts in the HUD; without it the
+# harness falls back to a ~4-chars/token estimate and reads exact counts from the
+# server's usage field.
+transformers>=4.44 ; extra == "exact-tokens"
