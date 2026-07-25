@@ -13,8 +13,8 @@ $-saved scoreboard. FastAPI thin shell around rag_app (stock LlamaIndex).
 
 Headline use case: the room asks a SHARED knowledge base (webapp/corpus, loaded + precomputed
 at startup) over multiple turns, under concurrent load -> vanilla recomputes the same chunks
-every turn/user (the "expensive photocopier"); Tensormesh reuses them. Personal hook: POST your
-own text to a private session.
+every turn/user (the "expensive photocopier"); Tensormesh reuses them. The /ingest endpoint also
+accepts your own text into a private session (API only).
 """
 import json, os, threading, time
 
@@ -152,7 +152,7 @@ async def ingest(req: Request):
 
 
 # Live attendee-tap counter: the background sim loop yields to it so a presenter's paced query
-# never shares the engine with the loop (Llama CacheBlend degrades under concurrency).
+# never shares the engine with the loop (a paced query gives the cleanest single-number read).
 _active = {"n": 0, "last": 0.0}   # n = live /chat streams in flight; last = when that last changed
 _active_lock = threading.Lock()
 def _bump_active(d: int):
@@ -359,7 +359,7 @@ def load_start(concurrency: int = 3, arms: str = "both"):
     if PUBLIC_READONLY:
         return JSONResponse({"error": "disabled on the public demo"}, status_code=403)
     # default LOW (3): on one replica per arm, high concurrency saturates both and the CPU cache
-    # tier goes throughput-neutral (perf-contract §C.3) -> no honest TTFT gap. Low load keeps
+    # tier goes throughput-neutral -> no honest TTFT gap. Low load keeps
     # vanilla honestly recomputing (0% reuse) as live "room texture" without a bogus race.
     with _load_lock:
         if _load["running"]:

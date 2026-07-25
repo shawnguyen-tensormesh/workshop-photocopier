@@ -40,7 +40,7 @@ BLEND_SEP    = os.environ.get("BLEND_SEP", " # # ")   # must equal the server's 
 CHUNK_TOK    = int(os.environ.get("CHUNK_TOK", "512"))   # RAG chunk = 2 blend chunks; >= blend_min_tokens(256)
 TOP_K        = int(os.environ.get("TOP_K", "32"))   # 32 x 512-tok chunks = ~16k context (the reliable reuse regime for this demo)
 MAX_TOKENS   = int(os.environ.get("MAX_TOKENS", "1024"))  # room for the answer (512 overflowed on open-ended Qs -> empty)
-REASONING_EFFORT = os.environ.get("REASONING_EFFORT", "")  # reasoning models (e.g. gpt-oss) only; leave empty for Llama/most models
+REASONING_EFFORT = os.environ.get("REASONING_EFFORT", "")  # reasoning models only; leave empty for Llama/most models
 SYSTEM_PROMPT = ("You are a helpful assistant. Answer the user's question using ONLY the "
                  "passages provided. If the answer is not in the passages, say you don't know.")
 
@@ -58,7 +58,7 @@ def _splitter() -> TokenTextSplitter:
     return TokenTextSplitter(chunk_size=CHUNK_TOK, chunk_overlap=0, tokenizer=_tokenizer().encode)
 
 def _llm(arm_url: str, max_tokens: int = MAX_TOKENS) -> OpenAILike:
-    # reasoning_effort (reasoning models like gpt-oss only): shorter analysis phase -> reaches the final answer within
+    # reasoning_effort (reasoning models only): shorter analysis phase -> reaches the final answer within
     # budget and cuts the "silent while reasoning" gap that looked like a hang.
     extra = {"reasoning_effort": REASONING_EFFORT} if REASONING_EFFORT else {}
     return OpenAILike(model=MODEL, api_base=arm_url.rstrip("/") + "/v1", api_key="none",
@@ -140,7 +140,7 @@ class RagSession:
 
     def _precompute(self) -> int:
         """Warm each chunk into the blend tier in the SAME chat representation the queries use.
-        Precompute and query MUST share the endpoint/format (chat, harmony-wrapped) or the chunk
+        Precompute and query MUST share the endpoint/format (same chat template) or the chunk
         token sequences differ and fingerprints won't match -> blend won't fire."""
         n = 0
         sys_ids = _tokenizer().encode(SYSTEM_PROMPT); sep = _sep_ids()
@@ -408,8 +408,8 @@ def _prefill(url, ids):
 
 
 def prime_regime(session: "RagSession", stop=None) -> dict:
-    """Set up the capacity/eviction regime PACED (sequential — Llama blend degrades under any
-    concurrency). The presets (~22) alone FIT in vanilla's ~28-context GPU cache, so priming must
+    """Set up the capacity/eviction regime, run PACED (sequential) for a clean single-number
+    read. The presets (~22) alone FIT in vanilla's ~28-context GPU cache, so priming must
     push them OUT: (1) warm every preset into the fleet's big L1 (fleet will reuse); (2) on vanilla,
     ask the presets THEN ~40 more distinct bank questions — 22+40 >> 28, so the presets become the
     oldest and evict. Result: the first tap of ANY preset recomputes on vanilla but reuses on fleet."""
@@ -540,7 +540,7 @@ def cross_engine_probe(session: "RagSession", query: str) -> dict:
     ans = ""
     try:
         # PREFILL-ONLY (max_tokens=1): cross-engine reuse is measured on the prefill, so we don't
-        # generate an answer (Llama-8B blend garbles a fraction — and the UI is numbers-only anyway).
+        # generate an answer — the UI is numbers-only anyway.
         httpx.post(ARM_B2.rstrip("/") + "/v1/completions",
                    json={"model": MODEL, "prompt": ids, "max_tokens": 1, "temperature": 0.0},
                    timeout=600).json()

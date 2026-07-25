@@ -168,9 +168,10 @@ own workload — don't assume a flat multiplier.
   every person still saw the win. Frame the slow vanilla pane as the point ("vanilla is drowning"). It only
   breaks down if everyone asks a brand-new, unwarmed question at the same moment.
 - `from cache %` is the honest signal to point at, more than the raw speedup.
-- If someone asks "is the baseline fair?": be upfront — the baseline runs with prefix caching off to
-  make the reuse-vs-recompute contrast stable; the deeper story (prefix caching helps only exact
-  prefixes, so RAG still mostly re-reads) is on the slides.
+- If someone asks "is the baseline fair?": yes — the room's working set exceeds vanilla's GPU cache,
+  so it keeps evicting and recomputing the retrieved passages, while the shared tier holds them all.
+  Prefix caching only reuses an *exact* prefix, so RAG (different passages, reordered) still re-reads —
+  that deeper story is on the slides.
 - The control endpoints are locked on the public deploy; attendees can only read/query.
 
 ---

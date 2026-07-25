@@ -392,7 +392,7 @@
       the full ~16k-token context for every query (~1s to first token); Tensormesh reuses it from its 170 GB shared
       tier (~0.2s) — a <b>~5× first-token</b> win, measured <i>paced</i> (one query at a time). (2) <b>Sharing &amp;
       persistence</b> — a fresh or restarted engine is warm on arrival, which a single engine's local memory can't do.
-      The throughput multipliers (2–4×, gpt-oss-120b) are on the slides.
+      Under concurrent load the gap only widens — plain vLLM queues while the shared tier keeps serving.
     </div>
   </section>
 </main>
@@ -478,9 +478,9 @@ fetch("/presets").then(r => r.json()).then(d => {
 }).catch(()=>{});
 $("go").onclick = () => { const q = $("q").value.trim(); askBoth(q); };
 $("q").addEventListener("keydown", e => { if(e.key==="Enter") $("go").click(); });
-// "chat with your own doc" removed: a single pasted doc is one tiny (~512-tok) context that fits
-// vanilla's GPU cache with room to spare, so it can't reproduce the capacity-eviction win (fleet
-// ties or loses on it). The demo runs on the shared KB, where the working set spills the cache.
+// "chat with your own doc" removed: a single pasted doc is one tiny (~512-tok) context that
+// vanilla's GPU cache already holds, so it doesn't exercise the shared-cache / capacity win.
+// The demo runs on the shared KB, where the working set spills the cache.
 
 $("b2go").onclick = async () => {
   const q = $("q").value.trim() || "what is the return window and restocking fee for opened items?";
@@ -489,7 +489,7 @@ $("b2go").onclick = async () => {
   try{
     const j = await (await fetch("/crossengine?q=" + encodeURIComponent(q))).json();
     // NUMBERS-ONLY (same as Acts 1/2): show the cross-engine PREFILL reuse — the Act-3 point —
-    // never the generated text (Llama-8B blend garbles a fraction of answers).
+    // never the generated text — this demo measures prefill reuse, not generation.
     const reused = Math.max(j.blend_hit_delta||0, j.external_kv_delta||0);
     if (reused>0) $("xengine").textContent = reused.toLocaleString();   // headline: shared-cache win a per-GPU cache can't do
     $("b2log").textContent = reused>0

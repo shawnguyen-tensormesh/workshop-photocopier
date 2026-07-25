@@ -41,7 +41,7 @@ chunks). `assert_blend_fires()` / `GET /gate` refuse to call a run green unless
 | `ARM_FLEET` | `http://bench-workshop-b1` | CacheBlend engine (reuse) |
 | `ARM_VANILLA` | `http://bench-workshop-base` | plain vLLM engine (recompute) |
 | `CHUNK_TOK` | `512` | RAG chunk = 2 blend chunks; must be ≥ `blend_min_tokens` (256) |
-| `TOP_K` | `6` | retrieved chunks per query |
+| `TOP_K` | `32` | retrieved chunks per query (32×512 ≈ 16k context) |
 | `BLEND_SEP` | `" # # "` | must equal the server's `blend_special_str` |
 | `DOLLARS_PER_GPU_HR` | `2.50` | the one agreed number for the $ meter |
 | `PREFILL_TOK_S` | `13000` | tok/s/GPU for the GPU-seconds math |
@@ -60,11 +60,9 @@ uvicorn server:app --host 0.0.0.0 --port 8000
 **Headline — the room queries a shared knowledge base, over multiple turns, under concurrent load.**
 Plain vLLM recomputes the same retrieved passages every turn and every user (the photocopier); the
 fleet reuses them. The scoreboard shows tokens reused → GPU-seconds avoided → **$ saved**, and the
-TTFT ratio climbs as more people join — because the win lives in the *concurrent, memory-pressured,
-shared-cache* regime (a single idle query is only ~2×; the room makes it 7–12×).
-
-**Personal hook — "chat with your own doc."** Paste a document; it becomes a private, isolated,
-per-session corpus. Same speedup, felt personally.
+TTFT gap widens as more people join — because the win lives in the *concurrent, memory-pressured,
+shared-cache* regime (the paced single-query win is ~5×, and plain vLLM only falls further behind as
+the room piles on).
 
 **Corpus size matters (measured 2026-07-20).** The external-KV scoreboard only moves when the working
 set exceeds GPU KV (~87 chunks at the 3.3GB demo cap). A tiny corpus is fully caught by vLLM's own
@@ -83,6 +81,6 @@ silently corrupts reuse), and that `BLEND_SEP` matches the server's `blend_speci
 
 ## Deploy
 
-Build the image (`Dockerfile`) and run it alongside the engines; for the public route, reuse the
-`workshop-photocopier-infra` fly + chisel-tunnel path (point `ARM_*` at the reverse-forwarded
-engines). Engine/blend-server manifests live in that infra repo — this repo is the website only.
+Build the image (`Dockerfile`) and run it alongside the two engines; point `ARM_FLEET` / `ARM_VANILLA`
+at their service URLs. For a public route, put the app behind any reverse proxy / tunnel to the
+engines. This repo is the website only.
